@@ -2,7 +2,7 @@
 .env
 
 # idea
-.idea/*
+.idea
 
 # logs
 /logs/*
