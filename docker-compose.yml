@@ -1,0 +1,221 @@
+version: '3'
+
+services:
+  redis:
+    container_name: redis
+    restart: always
+    image: redis:7.2.3
+    ports:
+      - "6379:6379"
+    networks:
+      iotaap-network:
+
+  mongo:
+    container_name: mongo
+    restart: always
+    image: mongo:5.0.18
+    volumes:
+      - ./mongodb:/data/db
+      - ./mongodb_config:/data/configdb
+    ports:
+      - "27017:27017"
+    networks:
+      iotaap-network:
+
+  iotaap_manager:
+    container_name: iotaap_manager
+    restart: always
+    image: poliath/iotaap-manager:2.2.1
+    depends_on:
+        - mongo
+        - load_balancer
+    env_file:
+      - .env
+    volumes:
+      - ./logs/iotaap-manager:/app/logs
+      - ./certs:/app/certs
+    ports:
+      - "3000:3000"
+    networks:
+      iotaap-network:
+
+  mqtt1:
+    image: emqx/emqx:5.3.0
+    container_name: mqtt1
+    restart: always
+    environment:
+    - "EMQX_NAME=mqtt"
+    - "EMQX_HOST=node1.iotaap.io"
+    - "EMQX_CLUSTER__DISCOVERY_STRATEGY=static"
+    - "EMQX_CLUSTER__STATIC__SEEDS=[mqtt@node1.iotaap.io, mqtt@node2.iotaap.io]"
+    - "EMQX_NODE__COOKIE=hiR5QjIPETEyvoskzpEjopkA"
+    - "EMQX_LISTENERS__SSL__DEFAULT__SSL_OPTIONS__VERIFY=verify_peer"
+    - "EMQX_LISTENERS__SSL__DEFAULT__SSL_OPTIONS__FAIL_IF_NO_PEER_CERT=true"
+    - "EMQX_LISTENERS__TCP__DEFAULT__ENABLE=true"
+    - "EMQX_LISTENERS__WS__DEFAULT__ENABLE=false"
+    - "EMQX_LISTENERS__WSS__DEFAULT__ENABLE=false"
+    - "EMQX_AUTHENTICATION__1__MECHANISM=password_based"
+    - "EMQX_AUTHENTICATION__1__BACKEND=mongodb"
+    - "EMQX_AUTHENTICATION__1__COLLECTION=mqttusers"
+    - "EMQX_AUTHENTICATION__1__PASSWORD_HASH_FIELD=password"
+    - "EMQX_AUTHENTICATION__1__SALT_FIELD=salt"
+    - "EMQX_AUTHENTICATION__1__PASSWORD_HASH_ALGORITHM={\"salt_position\":\"suffix\",\"name\":\"sha256\"}"
+    - "EMQX_AUTHENTICATION__1__ENABLE=true"
+    - "EMQX_AUTHENTICATION__1__MONGO_TYPE=single"
+    - "EMQX_AUTHENTICATION__1__SERVER=mongo:27017"
+    - "EMQX_AUTHENTICATION__1__DATABASE=api"
+    - "EMQX_AUTHENTICATION__1__FILTER={\"username\":\"$${username}\"}"
+    - "EMQX_AUTHORIZATION__NO_MATCH=deny"
+    - "EMQX_AUTHORIZATION__DENY_ACTION=disconnect"
+    - "EMQX_AUTHORIZATION__CACHE__ENABLE=false"
+    - "EMQX_AUTHORIZATION__SOURCES__1__TYPE=mongodb"
+    - "EMQX_AUTHORIZATION__SOURCES__1__MONGO_TYPE=single"
+    - "EMQX_AUTHORIZATION__SOURCES__1__ENABLE=true"
+    - "EMQX_AUTHORIZATION__SOURCES__1__SERVER=mongo:27017"
+    - "EMQX_AUTHORIZATION__SOURCES__1__DATABASE=api"
+    - "EMQX_AUTHORIZATION__SOURCES__1__COLLECTION=mqttacls"
+    - "EMQX_AUTHORIZATION__SOURCES__1__FILTER={\"username\":\"$${username}\"}"
+
+    networks:
+      iotaap-network:
+        aliases:
+        - node1.iotaap.io
+    volumes:
+      - vol-emqx-data-1:/opt/emqx/data
+      - vol-emqx-etc-1:/opt/emqx/etc
+      - vol-emqx-log-1:/opt/emqx/log
+      - ./certs_for_mqtt:/opt/emqx/etc/certs
+
+  mqtt2:
+    image: emqx/emqx:5.3.0
+    container_name: mqtt2
+    restart: always
+    environment:
+    - "EMQX_NAME=mqtt"
+    - "EMQX_HOST=node2.iotaap.io"
+    - "EMQX_CLUSTER__DISCOVERY_STRATEGY=static"
+    - "EMQX_CLUSTER__STATIC__SEEDS=[mqtt@node1.iotaap.io, mqtt@node2.iotaap.io]"
+    - "EMQX_NODE__COOKIE=hiR5QjIPETEyvoskzpEjopkA"
+    - "EMQX_LISTENERS__SSL__DEFAULT__SSL_OPTIONS__VERIFY=verify_peer"
+    - "EMQX_LISTENERS__SSL__DEFAULT__SSL_OPTIONS__FAIL_IF_NO_PEER_CERT=true"
+    - "EMQX_LISTENERS__TCP__DEFAULT__ENABLE=true"
+    - "EMQX_LISTENERS__WS__DEFAULT__ENABLE=false"
+    - "EMQX_LISTENERS__WSS__DEFAULT__ENABLE=false"
+    - "EMQX_AUTHENTICATION__1__MECHANISM=password_based"
+    - "EMQX_AUTHENTICATION__1__BACKEND=mongodb"
+    - "EMQX_AUTHENTICATION__1__COLLECTION=mqttusers"
+    - "EMQX_AUTHENTICATION__1__PASSWORD_HASH_FIELD=password"
+    - "EMQX_AUTHENTICATION__1__SALT_FIELD=salt"
+    - "EMQX_AUTHENTICATION__1__PASSWORD_HASH_ALGORITHM={\"salt_position\":\"suffix\",\"name\":\"sha256\"}"
+    - "EMQX_AUTHENTICATION__1__ENABLE=true"
+    - "EMQX_AUTHENTICATION__1__MONGO_TYPE=single"
+    - "EMQX_AUTHENTICATION__1__SERVER=mongo:27017"
+    - "EMQX_AUTHENTICATION__1__DATABASE=api"
+    - "EMQX_AUTHENTICATION__1__FILTER={\"username\":\"$${username}\"}"
+    - "EMQX_AUTHORIZATION__NO_MATCH=deny"
+    - "EMQX_AUTHORIZATION__DENY_ACTION=disconnect"
+    - "EMQX_AUTHORIZATION__CACHE__ENABLE=false"
+    - "EMQX_AUTHORIZATION__SOURCES__1__TYPE=mongodb"
+    - "EMQX_AUTHORIZATION__SOURCES__1__MONGO_TYPE=single"
+    - "EMQX_AUTHORIZATION__SOURCES__1__ENABLE=true"
+    - "EMQX_AUTHORIZATION__SOURCES__1__SERVER=mongo:27017"
+    - "EMQX_AUTHORIZATION__SOURCES__1__DATABASE=api"
+    - "EMQX_AUTHORIZATION__SOURCES__1__COLLECTION=mqttacls"
+    - "EMQX_AUTHORIZATION__SOURCES__1__FILTER={\"username\":\"$${username}\"}"
+
+    networks:
+      iotaap-network:
+        aliases:
+        - node2.iotaap.io
+    volumes:
+      - vol-emqx-data-2:/opt/emqx/data
+      - vol-emqx-etc-2:/opt/emqx/etc
+      - vol-emqx-log-2:/opt/emqx/log
+      - ./certs_for_mqtt:/opt/emqx/etc/certs
+
+  heartbeat:
+    container_name: heartbeat
+    restart: always
+    image: poliath/iotaap-heartbeat:1.0.0
+    depends_on:
+        - load_balancer
+    env_file: 
+      - .env
+    networks:
+        iotaap-network:
+  
+  load_balancer:
+      container_name: load_balancer
+      restart: always
+      image: poliath/iotaap-loadbalancer:1.0.0
+      depends_on:
+          - mqtt1
+          - mqtt2
+      ports: 
+          - "1883:1883"
+          - "8883:8883"
+          - "18083:18083"
+          # - "8083:8083"
+          # - "8084:8084"
+      networks:
+          iotaap-network:
+
+  influx:
+    container_name: influx
+    image: influxdb:2.7-alpine
+    env_file:
+      - .env
+    volumes:
+      - ./influx-storage:/var/lib/influxdb2:rw
+    ports:
+      - "8086:8086"
+    networks:
+      iotaap-network:
+
+  storage_service:
+    container_name: storage_service
+    restart: always
+    image: poliath/iotaap-storage:2.0.0
+    depends_on:
+      - influx
+      - redis
+      - load_balancer
+    env_file:
+      - .env
+    ports:
+      - "3001:3001"
+    volumes:
+     - ./logs/iotaap-storage:/app/logs
+     - ./firmware:/app/firmware
+    networks:
+      iotaap-network:
+
+  ota_service:
+    container_name: ota_service
+    restart: always
+    image: poliath/iotaap-ota:1.0.0
+    depends_on:
+      - redis
+    env_file:
+      - .env
+    ports:
+      - "3080:3080"
+      - "3443:3443"
+    volumes:
+      - ./logs/iotaap-ota:/app/logs
+      - ./certs_for_ota:/app/certs
+      - ./firmware:/app/firmware
+    networks:
+      iotaap-network:
+
+networks:
+  iotaap-network:
+    driver: bridge
+
+volumes:
+  vol-emqx-data-1:
+  vol-emqx-etc-1:
+  vol-emqx-log-1:
+  vol-emqx-data-2:
+  vol-emqx-etc-2:
+  vol-emqx-log-2:

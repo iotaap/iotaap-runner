@@ -1,0 +1,20 @@
+# env files
+.env
+
+# logs
+/logs/*
+
+# certs
+/certs/*
+/certs_for_mqtt/*
+/certs_for_ota/*
+
+# mongo
+/mongodb
+/mongodb_config
+
+# influx
+/influx-storage
+
+# firmware
+/firmware/*
