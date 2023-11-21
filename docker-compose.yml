@@ -165,6 +165,8 @@ services:
       - .env
     volumes:
       - ./influx-storage:/var/lib/influxdb2:rw
+    ports:
+      - "8086:8086"
     networks:
       iotaap-network:
 
