@@ -2,7 +2,7 @@
 
 # Exit if any command fails
 set -e
-
+echo "Runner script version: 1.0.0"
 echo "Running iotaap..."
 
 # Check if the user is logged in to Docker

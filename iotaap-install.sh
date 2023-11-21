@@ -3,6 +3,7 @@
 # Exit if any command fails
 set -e
 
+echo "Installation script version: 1.0.0"
 echo "Starting installation..."
 
 # Run Docker installation script

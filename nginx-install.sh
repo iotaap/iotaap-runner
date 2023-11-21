@@ -1,5 +1,7 @@
 #!/bin/bash
 
+echo "NGINX installation script version: 1.0.0"
+
 # SSL certificate and key files
 SSL_CERT="/home/ubuntu/certs/iotaap_io.crt"
 SSL_KEY="/home/ubuntu/certs/iotaap_io.key"

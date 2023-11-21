@@ -1,5 +1,7 @@
 #!/bin/bash
 
+echo "Docker installation script version: 1.0.0"
+
 # Update your existing list of packages
 sudo apt update
 

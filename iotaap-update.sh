@@ -3,6 +3,7 @@
 # Exit if any command fails
 set -e
 
+echo "Update script version: 1.0.0"
 echo "Starting update..."
 
 # Pull the latest changes from the main branch
