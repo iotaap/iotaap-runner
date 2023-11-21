@@ -5,8 +5,6 @@ services:
     container_name: redis
     restart: always
     image: redis:7.2.3
-    ports:
-      - "6379:6379"
     networks:
       iotaap-network:
 
@@ -139,11 +137,11 @@ services:
     image: poliath/iotaap-heartbeat:1.0.0
     depends_on:
         - load_balancer
-    env_file: 
+    env_file:
       - .env
     networks:
         iotaap-network:
-  
+
   load_balancer:
       container_name: load_balancer
       restart: always
@@ -151,7 +149,7 @@ services:
       depends_on:
           - mqtt1
           - mqtt2
-      ports: 
+      ports:
           - "1883:1883"
           - "8883:8883"
           - "18083:18083"
@@ -167,8 +165,6 @@ services:
       - .env
     volumes:
       - ./influx-storage:/var/lib/influxdb2:rw
-    ports:
-      - "8086:8086"
     networks:
       iotaap-network:
 
